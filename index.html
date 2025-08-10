@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>電動バイク/ガソリンバイク比較 / Electric vs Gasoline Bike Comparison</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    background: #121826;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-weight: 900;
+    font-size: 2rem;
+    letter-spacing: 1px;
+  }
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  /* ガソリン・電動入力を左右に分けて */
+  .input-wrapper {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 2rem;
+  }
+  .input-section {
+    flex: 1;
+    background: #1f2937;
+    padding: 20px 25px;
+    border-radius: 12px;
+  }
+  .input-section h2 {
+    margin-top: 0;
+    font-weight: 700;
+    font-size: 1.3rem;
+    border-bottom: 2px solid #4caf50;
+    padding-bottom: 6px;
+    margin-bottom: 1rem;
+    line-height: 1.3;
+    text-align: center;
+  }
+  .input-group {
+    margin-bottom: 18px;
+  }
+  .input-group label {
+    display: flex;
+    flex-direction: column;
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+  .input-group input[type=number] {
+    margin-top: 8px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1.15rem;
+    background: #334155;
+    color: white;
+    outline-offset: 2px;
+    outline-color: #4caf50;
+    height: 40px;
+  }
+
+  /* 使用条件 縦並び */
+  .usage-section {
+    background: #1f2937;
+    padding: 20px 25px;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+  .usage-section h2 {
+    margin-top: 0;
+    font-weight: 700;
+    font-size: 1.4rem;
+    border-bottom: 2px solid #4caf50;
+    padding-bottom: 6px;
+    margin-bottom: 1.2rem;
+    line-height: 1.3;
+  }
+  .usage-section label {
+    font-weight: 700;
+    font-size: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1.3rem;
+  }
+  .usage-section input[type=number] {
+    margin-top: 8px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1.2rem;
+    background: #334155;
+    color: white;
+    outline-offset: 2px;
+    outline-color: #4caf50;
+    height: 40px;
+  }
+  .annual-distance-display {
+    font-weight: 900;
+    font-size: 1.3rem;
+    margin-top: 4px;
+    color: #4caf50;
+    user-select: none;
+  }
+  .buttons {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  button {
+    background: #4caf50;
+    color: white;
+    border: none;
+    padding: 14px 30px;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin: 0 10px;
+    min-width: 140px;
+    transition: background-color 0.3s ease;
+    font-weight: 700;
+  }
+  button:hover {
+    background: #388e3c;
+  }
+
+  /* グラフの見た目調整 */
+  canvas {
+    background: #1e293b;
+    border-radius: 12px;
+    margin-bottom: 3rem;
+    padding: 1rem;
+    width: 100% !important;
+  }
+  .chart-total {
+    background: #2a4365 !important;
+  }
+
+  footer {
+    margin-top: 3rem;
+    font-size: 1rem;
+    color: #bbb;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    color: white;
+    font-size: 1rem;
+  }
+  th, td {
+    border: 1px solid #444;
+    padding: 0.6rem 1rem;
+    text-align: center;
+  }
+  th {
+    background-color: #334155;
+  }
+
+  @media (max-width: 820px) {
+    .input-wrapper {
+      flex-direction: column;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>電動バイク/ガソリンバイク比較<br />Electric<br />vs Gasoline Bike Comparison</h1>
+
+  <!-- 入力左右分割 -->
+  <div class="input-wrapper" role="group" aria-labelledby="inputGroupLabel">
+    <div class="input-section" aria-label="Gasoline Bike Inputs">
+      <h2 id="inputGroupLabel">ガソリンバイク入力<br />Gasoline Bike Inputs</h2>
+      <div class="input-group">
+        <label for="gas_purchase_price">購入価格 ($)<br />Purchase Price ($)</label>
+        <input type="number" id="gas_purchase_price" min="0" step="10" value="1000" aria-describedby="gas_purchase_price_desc" />
+      </div>
+      <div class="input-group">
+        <label for="gas_efficiency">燃費 (km/L)<br />Fuel Efficiency (km/L)</label>
+        <input type="number" id="gas_efficiency" min="0" step="0.1" value="30" aria-describedby="gas_efficiency_desc" />
+      </div>
+      <div class="input-group">
+        <label for="gas_price">ガソリン価格 ($/L)<br />Gasoline Price ($/L)</label>
+        <input type="number" id="gas_price" min="0" step="0.01" value="1.5" aria-describedby="gas_price_desc" />
+      </div>
+      <div class="input-group">
+        <label for="gas_maintenance">整備費 (年間) ($)<br />Maintenance Cost (Annual) ($)</label>
+        <input type="number" id="gas_maintenance" min="0" step="1" value="100" aria-describedby="gas_maintenance_desc" />
+      </div>
+      <div class="input-group">
+        <label for="gas_insurance">保険費 (年間) ($)<br />Insurance Cost (Annual) ($)</label>
+        <input type="number" id="gas_insurance" min="0" step="1" value="100" aria-describedby="gas_insurance_desc" />
+      </div>
+    </div>
+
+    <div class="input-section" aria-label="Electric Bike Inputs">
+      <h2>電動バイク入力<br />Electric Bike Inputs</h2>
+      <div class="input-group">
+        <label for="elec_purchase_price">購入価格 ($)<br />Purchase Price ($)</label>
+        <input type="number" id="elec_purchase_price" min="0" step="10" value="1000" aria-describedby="elec_purchase_price_desc" />
+      </div>
+      <div class="input-group">
+        <label for="elec_efficiency">電費 (km/kWh)<br />Electric Efficiency (km/kWh)</label>
+        <input type="number" id="elec_efficiency" min="0" step="0.1" value="30" aria-describedby="elec_efficiency_desc" />
+      </div>
+      <div class="input-group">
+        <label for="electric_price">電気価格 ($/kWh)<br />Electric Price ($/kWh)</label>
+        <input type="number" id="electric_price" min="0" step="0.01" value="0.13" aria-describedby="electric_price_desc" />
+      </div>
+      <div class="input-group">
+        <label for="elec_maintenance">整備費 (年間) ($)<br />Maintenance Cost (Annual) ($)</label>
+        <input type="number" id="elec_maintenance" min="0" step="1" value="100" aria-describedby="elec_maintenance_desc" />
+      </div>
+      <div class="input-group">
+        <label for="elec_insurance">保険費 (年間) ($)<br />Insurance Cost (Annual) ($)</label>
+        <input type="number" id="elec_insurance" min="0" step="1" value="100" aria-describedby="elec_insurance_desc" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 使用条件 縦並び -->
+  <section class="usage-section" aria-label="Usage Conditions">
+    <h2>使用条件 / Usage Conditions</h2>
+
+    <label for="daily_distance">1日の走行距離 (km)<br />Daily Distance (km)
+      <input type="number" id="daily_distance" min="0" step="1" value="100" aria-describedby="daily_distance_desc" />
+    </label>
+
+    <label for="operating_days">年間稼働日数 (日)<br />Operating Days Per Year
+      <input type="number" id="operating_days" min="0" step="1" value="250" aria-describedby="operating_days_desc" />
+    </label>
+
+    <label for="total_bikes">合計バイク台数<br />Total Number of Bikes
+      <input type="number" id="total_bikes" min="1" step="1" value="10" aria-describedby="total_bikes_desc" />
+    </label>
+
+    <div>
+      <strong>年間走行距離 (km) / Annual Distance (km): </strong>
+      <div id="annual_distance_display" class="annual-distance-display" aria-live="polite" aria-atomic="true">0</div>
+    </div>
+  </section>
+
+  <div class="buttons">
+    <button id="calcBtn" aria-label="Calculate costs and update charts">計算する / Calculate</button>
+    <button id="resetBtn" aria-label="Reset inputs to default values">リセット / Reset</button>
+  </div>
+
+  <canvas id="lineChart1" aria-label="Cumulative cost per bike line chart"></canvas>
+  <canvas id="barChart1" aria-label="Annual cost breakdown per bike bar chart"></canvas>
+  <canvas id="lineChartTotal" class="chart-total" aria-label="Cumulative cost for total bikes line chart"></canvas>
+  <canvas id="co2ChartTotal" class="chart-total" aria-label="Cumulative CO2 emissions for total bikes line chart"></canvas>
+
+  <footer>
+    <h2>アフリカ各国のガソリン代・電気代参考リスト<br />Reference Gasoline & Electricity Prices in African Countries</h2>
+    <table>
+      <thead>
+        <tr><th>国 / Country</th><th>ガソリン価格 ($/L)</th><th>電気料金 ($/kWh)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ナイジェリア / Nigeria</td><td>0.45</td><td>0.09</td></tr>
+        <tr><td>ケニア / Kenya</td><td>1.15</td><td>0.19</td></tr>
+        <tr><td>南アフリカ / South Africa</td><td>1.10</td><td>0.12</td></tr>
+        <tr><td>エジプト / Egypt</td><td>0.80</td><td>0.13</td></tr>
+        <tr><td>タンザニア / Tanzania</td><td>1.20</td><td>0.14</td></tr>
+        <tr><td>ウガンダ / Uganda</td><td>1.05</td><td>0.15</td></tr>
+        <tr><td>モロッコ / Morocco</td><td>1.00</td><td>0.11</td></tr>
+        <tr><td>アルジェリア / Algeria</td><td>0.55</td><td>0.07</td></tr>
+        <tr><td>エチオピア / Ethiopia</td><td>0.90</td><td>0.10</td></tr>
+        <tr><td>セネガル / Senegal</td><td>1.30</td><td>0.16</td></tr>
+      </tbody>
+    </table>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const defaults = {
+    gas_purchase_price: 1000,
+    gas_efficiency: 30,
+    gas_price: 1.5,
+    gas_maintenance: 100,
+    gas_insurance: 100,
+    elec_purchase_price: 1000,
+    elec_efficiency: 30,
+    electric_price: 0.13,
+    elec_maintenance: 100,
+    elec_insurance: 100,
+    daily_distance: 100,
+    operating_days: 250,
+    total_bikes: 10,
+  };
+
+  let lineChart1, barChart1, lineChartTotal, co2ChartTotal;
+
+  function updateAnnualDistance() {
+    const daily = Number(document.getElementById('daily_distance').value) || 0;
+    const days = Number(document.getElementById('operating_days').value) || 0;
+    const annual = daily * days;
+    document.getElementById('annual_distance_display').textContent = annual.toLocaleString();
+    return annual;
+  }
+
+  function calculate() {
+    const vals = {
+      gas_purchase_price: Number(document.getElementById('gas_purchase_price').value) || 0,
+      gas_efficiency: Number(document.getElementById('gas_efficiency').value) || 0,
+      gas_price: Number(document.getElementById('gas_price').value) || 0,
+      gas_maintenance: Number(document.getElementById('gas_maintenance').value) || 0,
+      gas_insurance: Number(document.getElementById('gas_insurance').value) || 0,
+
+      elec_purchase_price: Number(document.getElementById('elec_purchase_price').value) || 0,
+      elec_efficiency: Number(document.getElementById('elec_efficiency').value) || 0,
+      electric_price: Number(document.getElementById('electric_price').value) || 0,
+      elec_maintenance: Number(document.getElementById('elec_maintenance').value) || 0,
+      elec_insurance: Number(document.getElementById('elec_insurance').value) || 0,
+
+      daily_distance: Number(document.getElementById('daily_distance').value) || 0,
+      operating_days: Number(document.getElementById('operating_days').value) || 0,
+      total_bikes: Number(document.getElementById('total_bikes').value) || 0,
+    };
+
+    const annualDist = vals.daily_distance * vals.operating_days;
+
+    // CO2排出量定数
+    const co2PerLiterGas = 2.31 / 1000; // トン CO2 / L ガソリン
+    const co2PerKwhElectric = 0.475 / 1000; // トン CO2 / kWh 電力
+
+    const years = 3;
+    const labelsYears = [];
+    for(let i=0; i<=years; i++) labelsYears.push(i.toString());
+
+    // バイク1台あたり累積コスト推移
+    const gasCumCosts1 = [];
+    const elecCumCosts1 = [];
+    for(let y=0; y<=years; y++){
+      const fuelGas = y === 0 ? 0 : (annualDist * y) / vals.gas_efficiency * vals.gas_price;
+      const fuelElec = y === 0 ? 0 : (annualDist * y) / vals.elec_efficiency * vals.electric_price;
+      const maintGas = vals.gas_maintenance * y;
+      const insGas = vals.gas_insurance * y;
+      const maintElec = vals.elec_maintenance * y;
+      const insElec = vals.elec_insurance * y;
+      const purchaseGas = vals.gas_purchase_price;
+      const purchaseElec = vals.elec_purchase_price;
+
+      gasCumCosts1.push(+(purchaseGas + fuelGas + maintGas + insGas).toFixed(2));
+      elecCumCosts1.push(+(purchaseElec + fuelElec + maintElec + insElec).toFixed(2));
+    }
+
+    // バイク1台あたり年間コスト内訳（3年目）
+    const gasAnnualFuel = +(annualDist / vals.gas_efficiency * vals.gas_price).toFixed(2);
+    const elecAnnualFuel = +(annualDist / vals.elec_efficiency * vals.electric_price).toFixed(2);
+    const gasAnnualMaint = vals.gas_maintenance;
+    const elecAnnualMaint = vals.elec_maintenance;
+    const gasAnnualIns = vals.gas_insurance;
+    const elecAnnualIns = vals.elec_insurance;
+    const gasAnnualPurchase = +(vals.gas_purchase_price / years).toFixed(2);
+    const elecAnnualPurchase = +(vals.elec_purchase_price / years).toFixed(2);
+
+    const labelsBreakdown = ['購入価格 (年割) / Purchase Price (annualized)', '燃料費 / Fuel Cost', '整備費 / Maintenance', '保険費 / Insurance'];
+
+    const gasBreakdown = [gasAnnualPurchase, gasAnnualFuel, gasAnnualMaint, gasAnnualIns];
+    const elecBreakdown = [elecAnnualPurchase, elecAnnualFuel, elecAnnualMaint, elecAnnualIns];
+
+    // 合計バイク台数累積コスト推移
+    const gasCumCostsTotal = gasCumCosts1.map(c => c * vals.total_bikes);
+    const elecCumCostsTotal = elecCumCosts1.map(c => c * vals.total_bikes);
+
+    // 合計バイク台数累積CO2排出量
+    const gasCumCo2 = [];
+    const elecCumCo2 = [];
+    for(let y=0; y<=years; y++){
+      const gasCo2 = (annualDist * y / vals.gas_efficiency) * co2PerLiterGas * vals.total_bikes;
+      const elecCo2 = (annualDist * y / vals.elec_efficiency) * co2PerKwhElectric * vals.total_bikes;
+      gasCumCo2.push(+gasCo2.toFixed(4));
+      elecCumCo2.push(+elecCo2.toFixed(4));
+    }
+
+    drawCharts({
+      labelsYears,
+      gasCumCosts1,
+      elecCumCosts1,
+      labelsBreakdown,
+      gasBreakdown,
+      elecBreakdown,
+      gasCumCostsTotal,
+      elecCumCostsTotal,
+      gasCumCo2,
+      elecCumCo2
+    });
+  }
+
+  function drawCharts({
+    labelsYears,
+    gasCumCosts1,
+    elecCumCosts1,
+    labelsBreakdown,
+    gasBreakdown,
+    elecBreakdown,
+    gasCumCostsTotal,
+    elecCumCostsTotal,
+    gasCumCo2,
+    elecCumCo2
+  }) {
+    const optionsLineCommon = {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { labels: { color: 'white', font: { size: 14 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString()}`
+          }
+        },
+        title: { display: true, color: 'white', font: { size: 18, weight: 'bold' } }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, color: 'white', font: { size: 14 } },
+          ticks: { color: 'white', font: { size: 12 } },
+          grid: { color: 'rgba(255,255,255,0.15)' }
+        },
+        x: {
+          ticks: { color: 'white', font: { size: 12 } },
+          title: { display: true, color: 'white', font: { size: 14 } },
+          grid: { color: 'rgba(255,255,255,0.15)' }
+        }
+      }
+    };
+
+    // バイク1台当たり累積コスト推移
+    if(lineChart1) lineChart1.destroy();
+    const ctxLine1 = document.getElementById('lineChart1').getContext('2d');
+    lineChart1 = new Chart(ctxLine1, {
+      type: 'line',
+      data: {
+        labels: labelsYears,
+        datasets: [
+          {
+            label: 'ガソリンバイク Gasoline Bike',
+            data: gasCumCosts1,
+            borderColor: '#ff5722',
+            backgroundColor: 'rgba(255,87,34,0.15)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+          },
+          {
+            label: '電動バイク Electric Bike',
+            data: elecCumCosts1,
+            borderColor: '#4caf50',
+            backgroundColor: 'rgba(76,175,80,0.15)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+          }
+        ]
+      },
+      options: {
+        ...optionsLineCommon,
+        plugins: {
+          ...optionsLineCommon.plugins,
+          title: { text: 'バイク1台当たりの累積コスト推移 / Cumulative Cost Per Bike', ...optionsLineCommon.plugins.title }
+        },
+        scales: {
+          y: {
+            ...optionsLineCommon.scales.y,
+            title: { text: '費用 Cost ($)', ...optionsLineCommon.scales.y.title }
+          },
+          x: {
+            ...optionsLineCommon.scales.x,
+            title: { text: '経過年数 / Years', ...optionsLineCommon.scales.x.title }
+          }
+        }
+      }
+    });
+
+    // バイク1台当たり年間コスト内訳
+    if(barChart1) barChart1.destroy();
+    const ctxBar1 = document.getElementById('barChart1').getContext('2d');
+    barChart1 = new Chart(ctxBar1, {
+      type: 'bar',
+      data: {
+        labels: labelsBreakdown,
+        datasets: [
+          {
+            label: 'ガソリンバイク Gasoline Bike',
+            data: gasBreakdown,
+            backgroundColor: '#ff5722'
+          },
+          {
+            label: '電動バイク Electric Bike',
+            data: elecBreakdown,
+            backgroundColor: '#4caf50'
+          }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { labels: { color: 'white', font: { size: 14 } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.dataset.label}: $${ctx.parsed.x.toLocaleString()}`
+            }
+          },
+          title: {
+            display: true,
+            text: 'バイク1台当たりの年間コスト内訳 / Annual Cost Breakdown Per Bike',
+            color: 'white',
+            font: { size: 18, weight: 'bold' }
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            title: { display: true, text: '費用 Cost ($)', color: 'white', font: { size: 14 } },
+            ticks: { color: 'white', font: { size: 12 } },
+            grid: { color: 'rgba(255,255,255,0.15)' }
+          },
+          y: {
+            ticks: { color: 'white', font: { size: 12 } },
+            grid: { color: 'rgba(255,255,255,0.15)' }
+          }
+        }
+      }
+    });
+
+    // 合計台数累積コスト推移
+    if(lineChartTotal) lineChartTotal.destroy();
+    const ctxLineTotal = document.getElementById('lineChartTotal').getContext('2d');
+    lineChartTotal = new Chart(ctxLineTotal, {
+      type: 'line',
+      data: {
+        labels: labelsYears,
+        datasets: [
+          {
+            label: 'ガソリンバイク Gasoline Bike',
+            data: gasCumCostsTotal,
+            borderColor: '#ff5722',
+            backgroundColor: 'rgba(255,87,34,0.15)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+          },
+          {
+            label: '電動バイク Electric Bike',
+            data: elecCumCostsTotal,
+            borderColor: '#4caf50',
+            backgroundColor: 'rgba(76,175,80,0.15)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+          }
+        ]
+      },
+      options: {
+        ...optionsLineCommon,
+        plugins: {
+          ...optionsLineCommon.plugins,
+          title: { text: '合計バイク台数の累積コスト推移 / Cumulative Cost for Total Bikes', ...optionsLineCommon.plugins.title }
+        },
+        scales: {
+          y: {
+            ...optionsLineCommon.scales.y,
+            title: { text: '費用 Cost ($)', ...optionsLineCommon.scales.y.title }
+          },
+          x: {
+            ...optionsLineCommon.scales.x,
+            title: { text: '経過年数 / Years', ...optionsLineCommon.scales.x.title }
+          }
+        }
+      }
+    });
+
+    // 合計台数累積CO2排出量
+    if(co2ChartTotal) co2ChartTotal.destroy();
+    const ctxCo2Total = document.getElementById('co2ChartTotal').getContext('2d');
+    co2ChartTotal = new Chart(ctxCo2Total, {
+      type: 'line',
+      data: {
+        labels: labelsYears,
+        datasets: [
+          {
+            label: 'ガソリンバイク Gasoline Bike',
+            data: gasCumCo2,
+            borderColor: '#ff5722',
+            backgroundColor: 'rgba(255,87,34,0.15)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+          },
+          {
+            label: '電動バイク Electric Bike',
+            data: elecCumCo2,
+            borderColor: '#4caf50',
+            backgroundColor: 'rgba(76,175,80,0.15)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { labels: { color: 'white', font: { size: 14 } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} トン CO2 / tons CO2`
+            }
+          },
+          title: {
+            display: true,
+            text: '合計バイク台数の累計CO2排出量 / Cumulative CO2 Emissions for Total Bikes',
+            color: 'white',
+            font: { size: 18, weight: 'bold' }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'CO2排出量 (トン) / CO2 Emissions (tons)', color: 'white', font: { size: 14 } },
+            ticks: { color: 'white', font: { size: 12 } },
+            grid: { color: 'rgba(255,255,255,0.15)' }
+          },
+          x: {
+            ticks: { color: 'white', font: { size: 12 } },
+            title: { display: true, text: '経過年数 / Years', color: 'white', font: { size: 14 } },
+            grid: { color: 'rgba(255,255,255,0.15)' }
+          }
+        }
+      }
+    });
+  }
+
+  function reset() {
+    Object.entries(defaults).forEach(([key, val]) => {
+      const el = document.getElementById(key);
+      if(el) el.value = val;
+    });
+    updateAnnualDistance();
+    calculate();
+  }
+
+  document.getElementById('calcBtn').addEventListener('click', () => {
+    updateAnnualDistance();
+    calculate();
+  });
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    reset();
+  });
+  document.getElementById('daily_distance').addEventListener('input', () => {
+    updateAnnualDistance();
+  });
+  document.getElementById('operating_days').addEventListener('input', () => {
+    updateAnnualDistance();
+  });
+
+  // 初期表示
+  reset();
+})();
+</script>
+
+</body>
+</html>
